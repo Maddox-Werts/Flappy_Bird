@@ -28,11 +28,13 @@ bool running;
 int SCN_POINTS = 0;
 int SCN_FLOORHEIGHT;
 
-float groundOffset = 0;
+float bgOffsets[2];
+
 float groundposes[2];
 
 Mix_Chunk* samples[2];
 
+SDL_Texture* bgTex;
 SDL_Texture* groundTex;
 
 // Structures
@@ -122,6 +124,19 @@ int init(){
 
     SDL_FreeSurface(gsurf);
 
+    // Loading background texture
+    SDL_Surface* bgsurf;
+
+    if(!(bgsurf = IMG_Load("res/img/background.png"))){
+        throw(IMG_GetError());
+    }
+
+    if(!(bgTex = SDL_CreateTextureFromSurface(renderer, bgsurf))){
+        throw(SDL_GetError());
+    }
+
+    SDL_FreeSurface(bgsurf);
+
     // We're running!
     running = true;
 }
@@ -130,6 +145,8 @@ int init_scn(){
     SCN_FLOORHEIGHT = W_HEIGHT / 10;
     groundposes[0] = 0;
     groundposes[1] = W_WIDTH;
+    bgOffsets[0] = 0;
+    bgOffsets[1] = W_WIDTH;
 }
 int update(){
     // Hold events
@@ -192,6 +209,44 @@ int draw_floor(bool is_Dead){
     }
 
     // Quit
+    return 0;
+}
+int draw_background(bool is_Dead){
+    // Drawing
+    SDL_Rect rect;
+
+    // Moving
+    if(!is_Dead){
+        float bgmSize = SCN_PIPESPEED;
+        bgOffsets[0] -= bgmSize / 2;
+        bgOffsets[1] -= bgmSize / 2;
+    }
+
+    // Seting transform
+    rect.x = bgOffsets[0]; rect.y = 0;
+    rect.w = W_WIDTH; rect.h = W_HEIGHT + 50;
+
+    // Drawing
+    SDL_RenderDrawRect(renderer, &rect);
+    SDL_RenderCopy(renderer, bgTex, NULL, &rect);
+
+    // Seting transform
+    rect.x = bgOffsets[1]; rect.y = 0;
+    rect.w = W_WIDTH; rect.h = W_HEIGHT + 50;
+
+    // Drawing
+    SDL_RenderDrawRect(renderer, &rect);
+    SDL_RenderCopy(renderer, bgTex, NULL, &rect);
+
+    // Wrapping
+    if(bgOffsets[0] + W_WIDTH <= 0){
+        bgOffsets[0] = W_WIDTH;
+    }
+    if(bgOffsets[1] + W_WIDTH <= 0){
+        bgOffsets[1] = W_WIDTH;
+    }
+
+    // Returning
     return 0;
 }
 int playSound(const char* name, int channel){
@@ -398,7 +453,7 @@ public:
     }
     void Draw(){
         // Set draw color
-        SDL_SetRenderDrawColor(renderer, 0,0,0, 1);
+        SDL_SetRenderDrawColor(renderer, 0,0,0, 0);
 
         // Flipping BS
         SDL_Point centre = {64,32};
@@ -477,6 +532,7 @@ int main(int argc, char* argv[]){
         }
 
         // Render code..
+        draw_background(player->is_Dead);
         pipe_A.Draw();
         pipe_B.Draw();
         player->Draw();
