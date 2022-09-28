@@ -160,6 +160,9 @@ int update(){
         case SDL_QUIT:
             running = false;
             break;
+        case SDL_KEYDOWN:
+            if(ev.key.keysym.sym == SDL_SCANCODE_ESCAPE){running = false;}
+            break;
         }
     }
 
@@ -550,7 +553,16 @@ int main(int argc, char* argv[]){
 
                 if(player->position.y + player->scale.y > W_HEIGHT - SCN_FLOORHEIGHT){
                     SDL_Delay(1000);
-                    break;
+                    ready = false;
+
+                    init_scn();
+
+                    player = new Bird();
+                    pipe_A = Pipe();
+                    pipe_B = Pipe();
+
+                    // Setting stuff
+                    pipe_B.position.x = W_WIDTH * 1.5f;
                 }
             }
         }
