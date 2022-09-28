@@ -1,0 +1,11 @@
+lib/*.a
+lib/*.la
+lib/pkgconfig/*
+lib/cmake/*
+
+include/SDL2/*
+
+debug/*.dll
+debug/*.exe
+
+.vscode
