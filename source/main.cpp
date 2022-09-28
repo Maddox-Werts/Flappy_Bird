@@ -27,6 +27,7 @@ bool running;
 
 int SCN_POINTS = 0;
 int SCN_FLOORHEIGHT;
+bool ready;
 
 float bgOffsets[2];
 
@@ -139,6 +140,7 @@ int init(){
 
     // We're running!
     running = true;
+    ready = false;
 }
 int init_scn(){
     // Floor height
@@ -366,6 +368,7 @@ private:
     SDL_Texture* texture;
     Vector2 velocity;
     bool pressingUp, canFlap;
+    float time;
 
     // Functions
     void _flap(){
@@ -423,6 +426,10 @@ public:
             throw(IMG_GetError());
         }
 
+        // Transparent
+        Uint32 colorkey = SDL_MapRGB(surf->format, 0, 0, 0);
+        SDL_SetColorKey(surf, SDL_TRUE, colorkey);
+
         if(!(texture = SDL_CreateTextureFromSurface(renderer, surf))){
             throw(SDL_GetError());
         }
@@ -437,6 +444,7 @@ public:
 
         // Applying position
         position += velocity;
+        position.x = lerp(position.x, (W_WIDTH / 4), 0.125f);
         
         // Set rotation
         rotation = lerp(rotation, velocity.y * 150.0f, 0.125f);
@@ -447,13 +455,27 @@ public:
         // Dead?
         _floor_death();
     }
+    void StartHover(){
+        time += SCN_PIPESPEED;
+        position.y = ((W_HEIGHT / 2) + sin(time) - (scale.y / 2));
+        position.x = (W_WIDTH / 4);
+
+        const Uint8* keystate = SDL_GetKeyboardState(NULL);
+
+        if(keystate[SDL_SCANCODE_W]
+        || keystate[SDL_SCANCODE_UP]
+        || keystate[SDL_SCANCODE_SPACE]
+        || keystate[SDL_SCANCODE_RETURN]){
+            ready = true;
+        }
+    }
     void Fall(){
         velocity.y += PHY_GRAVITY;
         position += velocity;
     }
     void Draw(){
         // Set draw color
-        SDL_SetRenderDrawColor(renderer, 0,0,0, 0);
+        SDL_SetRenderDrawColor(renderer, 78,192,203, 1);
 
         // Flipping BS
         SDL_Point centre = {64,32};
@@ -510,25 +532,30 @@ int main(int argc, char* argv[]){
 
         // Game code..
         // --Dead or not?
-        if(!player->is_Dead){
-            player->Update();
-            pipe_A.Update();
-            pipe_B.Update();
+        if(ready){
+            if(!player->is_Dead){
+                player->Update();
+                pipe_A.Update();
+                pipe_B.Update();
 
-            // --Collisions
-            player->Collide(pipe_A);
-            player->Collide(pipe_B);
+                // --Collisions
+                player->Collide(pipe_A);
+                player->Collide(pipe_B);
 
-            // --Are we dead?
-            if(player->is_Dead) {playSound("res/snd/hit.wav", 1); SDL_Delay(500); playSound("res/snd/die.wav", 1);}
+                // --Are we dead?
+                if(player->is_Dead) {playSound("res/snd/hit.wav", 1); SDL_Delay(500); playSound("res/snd/die.wav", 1);}
+            }
+            else{
+                player->Fall();
+
+                if(player->position.y + player->scale.y > W_HEIGHT - SCN_FLOORHEIGHT){
+                    SDL_Delay(1000);
+                    break;
+                }
+            }
         }
         else{
-            player->Fall();
-
-            if(player->position.y + player->scale.y > W_HEIGHT - SCN_FLOORHEIGHT){
-                SDL_Delay(1000);
-                break;
-            }
+            player->StartHover();
         }
 
         // Render code..
