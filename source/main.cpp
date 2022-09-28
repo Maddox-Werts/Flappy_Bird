@@ -429,10 +429,6 @@ public:
             throw(IMG_GetError());
         }
 
-        // Transparent
-        Uint32 colorkey = SDL_MapRGB(surf->format, 0, 0, 0);
-        SDL_SetColorKey(surf, SDL_TRUE, colorkey);
-
         if(!(texture = SDL_CreateTextureFromSurface(renderer, surf))){
             throw(SDL_GetError());
         }
@@ -478,7 +474,8 @@ public:
     }
     void Draw(){
         // Set draw color
-        SDL_SetRenderDrawColor(renderer, 78,192,203, 1);
+        SDL_SetRenderDrawColor(renderer, 78,192,203, 0);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
         // Flipping BS
         SDL_Point centre = {64,32};
