@@ -29,6 +29,7 @@ int SCN_POINTS = 0;
 int SCN_FLOORHEIGHT;
 
 float groundOffset = 0;
+float groundposes[2];
 
 Mix_Chunk* samples[2];
 
@@ -127,6 +128,8 @@ int init(){
 int init_scn(){
     // Floor height
     SCN_FLOORHEIGHT = W_HEIGHT / 10;
+    groundposes[0] = 0;
+    groundposes[1] = W_WIDTH;
 }
 int update(){
     // Hold events
@@ -152,26 +155,41 @@ int display(){
     SDL_RenderPresent(renderer);
     return 0;
 }
-int draw_floor(){
+int draw_floor(bool is_Dead){
     // Making the color
-    SDL_SetRenderDrawColor(renderer, 50,255,50, 1);
-
-    groundOffset -= SCN_PIPESPEED;
+    SDL_SetRenderDrawColor(renderer, 0,0,0, 1);
 
     // Making a rectangle
-    SDL_Rect rect, viewport;
+    SDL_Rect rect;
 
-    // Ready?
-    viewport.x = 0; viewport.y = 0;
-    viewport.w = 336; viewport.h = 114;
+    if(!is_Dead){
+        groundposes[0] -= SCN_PIPESPEED;
+        groundposes[1] -= SCN_PIPESPEED;
+    }
 
     // Making transform
-    rect.x = 0; rect.y = W_HEIGHT - SCN_FLOORHEIGHT;
+    rect.x = groundposes[0]; rect.y = W_HEIGHT - SCN_FLOORHEIGHT;
     rect.w = W_WIDTH; rect.h = SCN_FLOORHEIGHT;
 
     // Rendering
     SDL_RenderFillRect(renderer, &rect);
-    SDL_RenderCopy(renderer, groundTex, &viewport, &rect);
+    SDL_RenderCopy(renderer, groundTex, NULL, &rect);
+
+    // Making transform
+    rect.x = groundposes[1]; rect.y = W_HEIGHT - SCN_FLOORHEIGHT;
+    rect.w = W_WIDTH; rect.h = SCN_FLOORHEIGHT;
+
+    // Rendering
+    SDL_RenderFillRect(renderer, &rect);
+    SDL_RenderCopy(renderer, groundTex, NULL, &rect);
+
+    // Wrapping
+    if(groundposes[0] + W_WIDTH <= 0){
+        groundposes[0] = W_WIDTH;
+    }
+    if(groundposes[1] + W_WIDTH <= 0){
+        groundposes[1] = W_WIDTH;
+    }
 
     // Quit
     return 0;
@@ -459,10 +477,10 @@ int main(int argc, char* argv[]){
         }
 
         // Render code..
-        player->Draw();
         pipe_A.Draw();
         pipe_B.Draw();
-        draw_floor();
+        player->Draw();
+        draw_floor(player->is_Dead);
 
         // Show display
         display();

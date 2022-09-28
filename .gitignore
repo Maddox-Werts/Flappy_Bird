@@ -9,3 +9,9 @@ debug/*.dll
 debug/*.exe
 
 .vscode
+.DS_Store
+
+*.dylib
+*.o
+
+flappybird
