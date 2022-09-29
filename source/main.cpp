@@ -4,6 +4,7 @@
 // Includes
 // --SYSTEMS
 #include <iostream>
+#include <fstream>
 #include <time.h>
 // --SDL2
 #include <SDL2/SDL.h>
@@ -13,6 +14,8 @@
 // Constants
 #define W_WIDTH 640
 #define W_HEIGHT 640 
+
+#define GME_SAVE "res/save.conf"
 
 #define SCN_PIPEWIDTH 75
 #define SCN_PIPESPACE 85
@@ -28,6 +31,8 @@ bool running;
 int SCN_POINTS = 0;
 int SCN_FLOORHEIGHT;
 bool ready;
+
+int HIGH_SCORE = 0;
 
 float bgOffsets[2];
 
@@ -150,6 +155,26 @@ int init_scn(){
     bgOffsets[0] = 0;
     bgOffsets[1] = W_WIDTH;
 }
+int save_game(){
+    std::ofstream out;
+
+    out.open(GME_SAVE);
+    out << HIGH_SCORE;
+    out.close();
+}
+int load_game(){
+    std::ifstream in(GME_SAVE);
+    std::string content;
+
+    if(in.is_open()){
+        in >> content;
+        HIGH_SCORE = std::stoi(content);
+        in.close();
+    }
+    else{
+        throw("Failed to open game save.\n");
+    }
+}
 int update(){
     // Hold events
     SDL_Event ev;
@@ -175,6 +200,12 @@ int clear(){
 }
 int display(){
     SDL_RenderPresent(renderer);
+    return 0;
+}
+int final_score(){
+    if(SCN_POINTS > HIGH_SCORE) {HIGH_SCORE = SCN_POINTS; printf("You beat the high score!\n");}
+    printf("Your score is: %i\n", SCN_POINTS);
+
     return 0;
 }
 int draw_floor(bool is_Dead){
@@ -513,6 +544,10 @@ int main(int argc, char* argv[]){
     // Start stuff
     init();
     init_scn();
+    load_game();
+    
+    // High score and shit
+    printf("This is the high score\n");
 
     // Making objects
     Bird* player = new Bird();
@@ -549,6 +584,9 @@ int main(int argc, char* argv[]){
                 player->Fall();
 
                 if(player->position.y + player->scale.y > W_HEIGHT - SCN_FLOORHEIGHT){
+                    // Display Score:
+                    final_score();
+
                     SDL_Delay(1000);
                     ready = false;
 
@@ -557,6 +595,8 @@ int main(int argc, char* argv[]){
                     player = new Bird();
                     pipe_A = Pipe();
                     pipe_B = Pipe();
+
+                    SCN_POINTS = 0;
 
                     // Setting stuff
                     pipe_B.position.x = W_WIDTH * 1.5f;
